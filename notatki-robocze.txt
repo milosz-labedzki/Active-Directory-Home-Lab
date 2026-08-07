@@ -1,0 +1,5 @@
+Otrzymano ostrzeżenie o braku DNS delegation — spodziewane w izolowanym labie, gdzie ta domena nie integruje się z żadną nadrzędną infrastrukturą DNS.
+
+- Zainstalowano rolę AD DS i promowano serwer do kontrolera domeny "corp.local"
+- Forest/Domain functional level: Windows Server 2025, NetBIOS name: CORP
+- Zweryfikowano w ADUC że domena corp.local widoczna i działa
