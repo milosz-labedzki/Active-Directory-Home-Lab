@@ -3,3 +3,21 @@ Otrzymano ostrzeżenie o braku DNS delegation — spodziewane w izolowanym labie
 - Zainstalowano rolę AD DS i promowano serwer do kontrolera domeny "corp.local"
 - Forest/Domain functional level: Windows Server 2025, NetBIOS name: CORP
 - Zweryfikowano w ADUC że domena corp.local widoczna i działa
+
+---------------------------------------------------------------------------------------------------------------------------
+
+- Utworzono strukturę 4 OU w domenie corp.local: IT, HR, Finance, ServiceAccounts
+- Cel: imitacja struktury organizacyjnej firmy, ułatwienie zarządzania kontami i uprawnieniami
+
+
+- Utworzono konto usługowe "svc-sql" w OU ServiceAccounts
+- Ustawiono "Password never expires" - typowa (i ryzykowna) konfiguracja kont serwisowych w rzeczywistych środowiskach
+- Konto to zostanie użyte jako cel ataku Kerberoasting (wymaga ustawienia SPN - Service Principal Name)
+
+- Ustawiono SPN dla konta svc-sql: MSSQLSvc/dc01.corp.local:1433
+- Komenda: setspn -A MSSQLSvc/dc01.corp.local:1433 corp\svc-sql
+- Konto svc-sql jest teraz podatne na atak Kerberoasting - dowolny użytkownik domeny może zażądać biletu Kerberos dla tej usługi i próbować złamać hasło offline
+
+- Zweryfikowano SPN w domenie komendą: setspn -T corp.local -Q */*
+- Potwierdzono "Existing SPN found!" - konto svc-sql widoczne jako cel z SPN MSSQLSvc/dc01.corp.local:1433
+- Ten widok odpowiada temu, co zobaczyłby atakujący enumerujący domenę pod kątem kont podatnych na Kerberoasting
