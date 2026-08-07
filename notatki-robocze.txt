@@ -21,3 +21,7 @@ Otrzymano ostrzeżenie o braku DNS delegation — spodziewane w izolowanym labie
 - Zweryfikowano SPN w domenie komendą: setspn -T corp.local -Q */*
 - Potwierdzono "Existing SPN found!" - konto svc-sql widoczne jako cel z SPN MSSQLSvc/dc01.corp.local:1433
 - Ten widok odpowiada temu, co zobaczyłby atakujący enumerujący domenę pod kątem kont podatnych na Kerberoasting
+
+- Sprawdzono stan LLMNR poprzez klucz rejestru HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient\EnableMulticast
+- Klucz nie istnieje - brak jawnej polityki wyłączającej LLMNR
+- LLMNR działa na domyślnych ustawieniach Windows (włączony) - podatność gotowa do wykorzystania w ataku Responder z Kali

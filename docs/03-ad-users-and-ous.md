@@ -111,7 +111,21 @@ This confirms `svc-sql` is discoverable as a Kerberoastable target:
 !\[SPN verification](../images/spn-verification.png)
 
 
+## 4. LLMNR Poisoning — Enabling the Second Attack Vector
 
+Unlike Kerberoasting, LLMNR (Link-Local Multicast Name Resolution) poisoning does not require any explicit misconfiguration — LLMNR is **enabled by default** on Windows and is only disabled through explicit Group Policy.
+
+To confirm this default (vulnerable) state, the following command was run on the Domain Controller:
+
+```powershell
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Name "EnableMulticast" -ErrorAction SilentlyContinue
+```
+
+No value was returned, confirming that no policy explicitly disables LLMNR — meaning it remains active on its default (enabled) setting.
+
+![LLMNR status check](../images/llmnr-status-check.png)
+
+**Why this matters:** with LLMNR enabled, any machine on the network can be tricked into resolving a non-existent hostname via multicast, allowing an attacker (e.g. using Responder on Kali) to spoof the response and capture NTLM authentication hashes.
 \## Status
 
 ✅ AD structure, fictional users, and Kerberoasting-vulnerable service account successfully configured.
