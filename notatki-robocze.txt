@@ -25,3 +25,10 @@ Otrzymano ostrzeżenie o braku DNS delegation — spodziewane w izolowanym labie
 - Sprawdzono stan LLMNR poprzez klucz rejestru HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient\EnableMulticast
 - Klucz nie istnieje - brak jawnej polityki wyłączającej LLMNR
 - LLMNR działa na domyślnych ustawieniach Windows (włączony) - podatność gotowa do wykorzystania w ataku Responder z Kali
+
+
+------------------------------------------------------------------------------------------------------------------------------
+
+- Podczas próby Kerberoastingu napotkano błąd LDAP (data 773) - konto jkowalski miało ustawioną flagę "must change password at next logon"
+- Naprawiono: odznaczono tę flagę i włączono "Password never expires" dla wszystkich testowych kont użytkowników
+- Powód: konta testowe w labie nie powinny wymuszać zmiany hasła, aby uniknąć blokowania prób uwierzytelniania podczas testów ataków

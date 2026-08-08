@@ -74,7 +74,7 @@ An SPN was registered for the account to associate it with a simulated SQL Serve
 
 ```powershell
 
-setspn -A MSSQLSvc/dc01.corp.local:1433 corp\\svc-sql
+setspn -A MSSQLSvc/dc01.corp.local:1433 corp\svc-sql
 
 ```
 
