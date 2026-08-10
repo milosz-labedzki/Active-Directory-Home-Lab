@@ -32,3 +32,8 @@ Otrzymano ostrzeżenie o braku DNS delegation — spodziewane w izolowanym labie
 - Podczas próby Kerberoastingu napotkano błąd LDAP (data 773) - konto jkowalski miało ustawioną flagę "must change password at next logon"
 - Naprawiono: odznaczono tę flagę i włączono "Password never expires" dla wszystkich testowych kont użytkowników
 - Powód: konta testowe w labie nie powinny wymuszać zmiany hasła, aby uniknąć blokowania prób uwierzytelniania podczas testów ataków
+
+Konto usługowe svc-sql ma ustawione msDS-SupportedEncryptionTypes = 24 (AES128 + AES256). Hasło konta zostało zresetowane 10.08.2026 o 15:04:54, aby konto posiadało aktualne klucze Kerberos.
+
+
+Na Kali zainstalowany jest Impacket v0.13.0.dev0. Próba użycia GetUserSPNs -version nie zwróciła wersji w trybie wersji, ponieważ ta wersja narzędzia wymaga argumentu target; wersja jest jednak widoczna w nagłówku programu.
