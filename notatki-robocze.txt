@@ -37,3 +37,9 @@ Konto usługowe svc-sql ma ustawione msDS-SupportedEncryptionTypes = 24 (AES128 
 
 
 Na Kali zainstalowany jest Impacket v0.13.0.dev0. Próba użycia GetUserSPNs -version nie zwróciła wersji w trybie wersji, ponieważ ta wersja narzędzia wymaga argumentu target; wersja jest jednak widoczna w nagłówku programu.
+
+
+Impacket v0.13.0.dev0 nie rozpoznaje parametru -no-rc4. Próba użycia tej opcji zakończyła się błędem unrecognized arguments. Dalszy test zostanie wykonany bez tego parametru.
+
+Zweryfikowano SPN MSSQLSvc/root.corp.local:1433. SPN istnieje w domenie i jest przypisany do konta svc-sql.
+
