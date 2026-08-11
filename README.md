@@ -50,13 +50,8 @@
 
 # 
 
-# \## 🛠️ Tools Used
+## 🛠️ Tools Used
+VirtualBox, Windows Server 2025, Kali Linux, PowerShell, Impacket, Hashcat
 
-# VirtualBox, Windows Server 2025, Kali Linux, PowerShell, Impacket, Responder, Hashcat
-
-# 
-
-# \## 🚧 Status
-
-# 🟢 In progress
-
+## 🚧 Status
+🟡 In progress — Kerberoasting completed (04), LLMNR Poisoning and Blue Team detection planned next
