@@ -13,13 +13,13 @@ To simulate a realistic corporate environment, the default flat AD structure was
 | Finance | Finance department accounts |
 | ServiceAccounts | Service accounts used by applications/services |
 
-![AD OU structure](../images/ad-ou-structure.png)
+![AD OU structure](../images/03-01-ad-ou-structure.png)
 
 ## 2. Fictional User Accounts
 
 Several fictional users were created across the IT, HR, and Finance OUs to populate the directory with realistic-looking accounts.
 
-![Users in IT OU](../images/ad-users-it.png)
+![Users in IT OU](../images/03-02-ad-users-it.png)
 
 *(Passwords used are lab-only test credentials and are not documented here.)*
 
@@ -39,7 +39,7 @@ An SPN was registered for the account to associate it with a simulated SQL Serve
 setspn -A MSSQLSvc/dc01.corp.local:1433 corp\svc-sql
 ```
 
-![SPN registered for svc-sql](../images/spn-svc-sql-registered.png)
+![SPN registered for svc-sql](../images/03-03-spn-svc-sql-registered.png)
 
 **Why this matters:** once a service account has a registered SPN, any authenticated domain user can request a Kerberos service ticket for it. That ticket is encrypted with the service account's password hash, and can be extracted and cracked offline — without touching the Domain Controller again. This is the foundation of the Kerberoasting attack technique.
 
@@ -53,7 +53,7 @@ setspn -T corp.local -Q */*
 
 This confirms `svc-sql` is discoverable as a Kerberoastable target:
 
-![SPN verification](../images/spn-verification.png)
+![SPN verification](../images/03-04-spn-verification.png)
 
 ## Status
 

@@ -32,6 +32,8 @@ The initial attempt failed:
 
 **Root cause:** Windows Server 2025 enforces AES-only Kerberos on accounts with `msDS-SupportedEncryptionTypes=24` and rejects RC4 negotiation entirely. The Impacket version shipped via `apt` (0.13.0.dev0) did not negotiate AES correctly in the TGS-REQ.
 
+![Impacket version before upgrade](../images/04-01-impacket-version.png)
+
 **Fix:** upgrade Impacket via `pip`:
 
 ```bash
@@ -58,7 +60,7 @@ With Impacket updated and connectivity restored, the request succeeded and retur
 impacket-GetUserSPNs 'corp.local/jkowalski:ZAQ!2wsx' -dc-ip 192.168.10.10 -request -request-user svc-sql -outputfile svc-sql_hash.txt
 ```
 
-![Kerberoasting hash extraction](../images/04-kerberoasting-hash-extraction.png)
+![Kerberoasting hash extraction](../images/04-02-kerberoasting-hash-extraction.png)
 
 **Why this matters:** the `$18` prefix indicates etype 18 (AES256-CTS-HMAC-SHA1-96). Unlike the legacy `$23` (RC4) format, this hash reflects the AES-only policy enforced on the account and requires a matching Hashcat mode.
 
@@ -81,7 +83,7 @@ Recovered........: 1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)
 Recovered plaintext password: `ZAQ!2wsx`
 Time to crack: ~15 seconds
 
-![Hashcat cracked result](../images/04-kerberoasting-hashcat-cracked.png)
+![Hashcat cracked result](../images/04-03-kerberoasting-hashcat-cracked.png)
 
 ## Status
 
