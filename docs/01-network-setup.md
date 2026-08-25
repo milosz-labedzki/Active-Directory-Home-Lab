@@ -60,6 +60,7 @@ Confirms Kali holds `192.168.10.20/24` on `eth1` (the Internal Network adapter),
 
 ```bash
 sudo nmcli connection add type ethernet ifname eth1 con-name lab-static ipv4.method manual ipv4.addresses 192.168.10.20/24
+sudo nmcli connection up lab-static
 ```
 
 ## 5. Connectivity Test
