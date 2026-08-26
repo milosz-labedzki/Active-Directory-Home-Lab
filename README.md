@@ -47,7 +47,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 
 ## 🛠️ Tools Used
 
-VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Hashcat
+VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Hashcat · Responder
 
 ## 🚧 Status
 🟡 **In progress**
