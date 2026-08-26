@@ -2,9 +2,8 @@
 This document covers the execution of an LLMNR/NBT-NS poisoning attack against the `corp.local` domain, performed from the Kali Linux VM using Responder.
 
 ## 1. Target & Attacker Context
-- **Domain Controller:** Windows Server 2025 (192.168.10.10, `corp.local`)
+- **Victim / Domain Controller:** Windows Server 2025, `DC01` (192.168.10.10, `corp.local`)
 - **Attacker machine:** Kali Linux (192.168.10.20, `eth1`)
-- **Victim:** Windows 11 domain client VM
 - **Tool:** Responder 3.1.7.0
 
 Unlike Kerberoasting, this attack requires no prior domain credentials. It is passive/opportunistic: Responder listens for broadcast name-resolution requests (LLMNR, NBT-NS, mDNS) generated whenever DNS resolution fails on a client, and answers them, tricking the client into authenticating to the attacker.
@@ -22,8 +21,8 @@ sudo responder -I eth1 -A
 
 **Why this matters:** analyze mode verifies the attack surface exists (broadcast resolution traffic is reachable) before actively tampering with name resolution on the network.
 
-## 3. Triggering Name Resolution Failure on the Client
-On the Windows client, a nonexistent share was accessed, forcing DNS resolution to fail and triggering fallback to LLMNR/NBT-NS broadcast:
+## 3. Triggering Name Resolution Failure on the Victim
+On DC01, a nonexistent share was accessed, forcing DNS resolution to fail and triggering fallback to LLMNR/NBT-NS broadcast:
 
 ```powershell
 ls \\losowanazwa123\test
@@ -31,7 +30,7 @@ ls \\losowanazwa123\test
 
 > ls : Cannot find path '\\losowanazwa123\test' because it does not exist.
 
-![LLMNR trigger on client](../images/05-02-llmnr-trigger-client.png)
+![LLMNR trigger on victim](../images/05-02-llmnr-trigger-client.png)
 
 ## 4. Poisoning and Capturing the Hash
 With Responder switched to active poisoning mode:
