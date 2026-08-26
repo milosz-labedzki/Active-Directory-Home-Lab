@@ -17,9 +17,9 @@ sudo responder -I eth1 -A
 
 > [+] Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned.
 
-![Responder analyze mode confirmation](../images/05-01-responder-analyze-mode-confirmation.png)
+Analyze mode confirms broadcast resolution traffic actually reaches the attacker NIC before switching to active poisoning.
 
-**Why this matters:** analyze mode verifies the attack surface exists (broadcast resolution traffic is reachable) before actively tampering with name resolution on the network.
+![Responder analyze mode confirmation](../images/05-01-responder-analyze-mode-confirmation.png)
 
 ## 3. Triggering Name Resolution Failure on the Victim
 On DC01, a nonexistent share was accessed, forcing DNS resolution to fail and triggering fallback to LLMNR/NBT-NS broadcast:
@@ -49,7 +49,7 @@ Responder answered the broadcast request and captured an NTLMv2-SSP authenticati
 
 ![LLMNR poisoning hash capture](../images/05-03-llmnr-poisoning-hash-capture.png)
 
-**Why this matters:** the captured hash belongs to `CORP\Administrator`, not a low-privilege account. LLMNR poisoning does not target a specific user — it captures whichever credentials happen to attempt resolution, which can include highly privileged accounts on a busy network.
+The captured hash belongs to `CORP\Administrator`, not a low-privilege account — LLMNR poisoning doesn't target a specific user, it just grabs whichever credentials happen to attempt resolution next.
 
 ## 5. Offline Cracking with Hashcat
 The captured hash was saved to a file and cracked offline using Hashcat mode `5600` (NetNTLMv2):
@@ -70,7 +70,7 @@ Time to crack: ~17 seconds
 
 ![Hashcat cracked result](../images/05-04-llmnr-hashcat-cracked.png)
 
-**Why this matters:** the recovered password matches the password used by `jkowalski` in `04-kerberoasting-attack.md`. This indicates password reuse across accounts of different privilege levels — a single compromised credential can enable lateral movement or privilege escalation.
+The recovered password matches the one used by `jkowalski` in `04-kerberoasting-attack.md` — password reuse across accounts of different privilege levels, which opens the door to lateral movement or privilege escalation from a single compromised credential.
 
 ## Status
 ✅ LLMNR/NBT-NS poisoning attack successfully executed end-to-end: broadcast traffic confirmation → client trigger → hash capture → offline password recovery.
