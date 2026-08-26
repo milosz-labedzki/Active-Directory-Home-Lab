@@ -33,7 +33,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 | 02 | [Domain Controller Setup](docs/02-domain-controller-setup.md) | AD DS install & forest promotion on Server 2025 |
 | 03 | [AD Users & OUs](docs/03-ad-users-and-ous.md) | OU structure, fictional users, Kerberoastable service account |
 | 04 | [Kerberoasting Attack](docs/04-kerberoasting-attack.md) | SPN discovery → AES256 TGS extraction → offline crack |
-| 05 | [LLMNR Poisoning Attack](docs/05-llmnr-poisoning-attack.md) | Responder-based credential capture *(planned)* |
+| 05 | [LLMNR Poisoning Attack](docs/05-llmnr-poisoning-attack.md) | Responder-based credential capture |
 | 06 | [Detection (Blue Team)](docs/06-detection-blue-team.md) | Log analysis & defensive recommendations *(planned)* |
 
 ## 🔑 Key Learnings & Skills Demonstrated
@@ -43,18 +43,20 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 - **Offensive tooling:** Impacket (`GetUserSPNs`), Hashcat (mode `19700` for AES256 Kerberos tickets)
 - **Real-world debugging:** resolved VirtualBox networking issues (NAT vs. Internal Network adapters, DHCP/static IP conflicts under NetworkManager)
 - **Operational hygiene:** redacting plaintext credentials from documentation before publishing
+- **Broadcast poisoning:** used Responder to capture NTLMv2 credentials by exploiting LLMNR/NBT-NS fallback, and identified password reuse as a result
 
 ## 🛠️ Tools Used
 
 VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Hashcat
 
 ## 🚧 Status
-
 🟡 **In progress**
+
 ✅ Domain Controller deployed and verified
 ✅ AD structure and Kerberoastable service account configured
 ✅ Kerberoasting attack completed end-to-end (AES256 TGS extraction + offline crack)
-⏭️ Next: LLMNR/NBT-NS Poisoning attack (Responder) + Blue Team detection write-up
+✅ LLMNR/NBT-NS poisoning attack completed end-to-end (broadcast capture + offline crack)
+⏭️ Next: Blue Team detection write-up (log analysis, defensive recommendations)
 
 ---
 
