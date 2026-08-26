@@ -60,4 +60,4 @@ VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Has
 
 ---
 
-*This lab runs entirely within an isolated VirtualBox network with no internet-facing services. All credentials referenced are lab-only test values, generated solely for this project and not reused elsewhere.*
+*This lab runs entirely within an isolated VirtualBox network with no internet-facing services. All credentials referenced are lab-only test values, generated solely for this project — including any intentional password reuse between accounts, which is part of the attack scenario, not a real-world credential leak.*
