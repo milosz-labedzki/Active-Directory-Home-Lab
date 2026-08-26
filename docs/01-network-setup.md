@@ -59,7 +59,8 @@ Confirms Kali holds `192.168.10.20/24` on `eth1` (the Internal Network adapter),
 **Note:** the static IP on `eth1` occasionally resets after the interface is reconnected or the NetworkManager service restarts. If `ip a` shows no IPv4 address on `eth1`, it can be reassigned manually:
 
 ```bash
-sudo ip addr add 192.168.10.20/24 dev eth1
+sudo nmcli connection add type ethernet ifname eth1 con-name lab-static ipv4.method manual ipv4.addresses 192.168.10.20/24
+sudo nmcli connection up lab-static
 ```
 
 ## 5. Connectivity Test
