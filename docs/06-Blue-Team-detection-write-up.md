@@ -1,0 +1,3 @@
+Classic Kerberoasting detection via Event 4769 usually relies on spotting a weak encryption type (etype 0x17 / RC4) in the Ticket Encryption Type field. That heuristic doesn’t apply here — svc-sql has msDS-SupportedEncryptionTypes=24 (AES128+AES256 only), so every TGS request for this account, legitimate or malicious, will show AES. Encryption type alone can’t distinguish the attack.
+
+Detection has to shift to behavioral signals instead: e.g. the volume/pattern of 4769 requests for multiple SPNs from one source in a short window (typical of enumeration tools like GetUserSPNs), or a requesting account with no legitimate business reason to touch the targeted service.
