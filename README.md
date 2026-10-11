@@ -2,7 +2,7 @@
 
 Isolated Active Directory lab built for Red Team attack simulation and Blue Team log analysis — fully self-hosted on VirtualBox, with no internet-facing components.
 
-![Status](https://img.shields.io/badge/status-in%20progress-yellow)
+![Status](https://img.shields.io/badge/status-complete-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-VirtualBox-blue)
 ![OS](https://img.shields.io/badge/DC-Windows%20Server%202025-0078D6)
 ![Attacker](https://img.shields.io/badge/Attacker-Kali%20Linux-557C94)
@@ -34,7 +34,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 | 03 | [AD Users & OUs](docs/03-ad-users-and-ous.md) | OU structure, fictional users, Kerberoastable service account |
 | 04 | [Kerberoasting Attack](docs/04-kerberoasting-attack.md) | SPN discovery → AES256 TGS extraction → offline crack |
 | 05 | [LLMNR Poisoning Attack](docs/05-llmnr-poisoning-attack.md) | Responder-based credential capture |
-| 06 | [Detection (Blue Team)](docs/06-detection-blue-team.md) | Log analysis & defensive recommendations *(planned)* |
+| 06 | [Detection (Blue Team)](docs/06-detection-blue-team.md) | Event 4769/4020 analysis, encryption-type pitfall, tested LLMNR/NBT-NS/mDNS mitigation |
 
 ## 🔑 Key Learnings & Skills Demonstrated
 
@@ -44,19 +44,20 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 - **Real-world debugging:** resolved VirtualBox networking issues (NAT vs. Internal Network adapters, DHCP/static IP conflicts under NetworkManager)
 - **Operational hygiene:** redacting plaintext credentials from documentation before publishing
 - **Broadcast poisoning:** used Responder to capture NTLMv2 credentials by exploiting LLMNR/NBT-NS fallback, and identified password reuse as a result
+- **Blue Team detection:** identified Event IDs 4769 (Kerberoasting) and 4020 (NTLM fallback from LLMNR/NBT-NS poisoning) as evidence sources, showed why the standard RC4-encryption-type heuristic fails under AES-only hardening, and iteratively tested a defensive fix — disabling only LLMNR/NBT-NS left an mDNS-shaped gap, which was then closed and verified end-to-end
 
 ## 🛠️ Tools Used
 
 VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Hashcat · Responder
 
-## 🚧 Status
-🟡 **In progress**
+## ✅ Status
+🟢 **Complete**
 
 ✅ Domain Controller deployed and verified
 ✅ AD structure and Kerberoastable service account configured
 ✅ Kerberoasting attack completed end-to-end (AES256 TGS extraction + offline crack)
 ✅ LLMNR/NBT-NS poisoning attack completed end-to-end (broadcast capture + offline crack)
-⏭️ Next: Blue Team detection write-up (log analysis, defensive recommendations)
+✅ Blue Team detection write-up completed for both attacks (log analysis + tested, verified mitigations)
 
 ---
 
