@@ -2,7 +2,7 @@
 
 Isolated Active Directory lab built for Red Team attack simulation and Blue Team log analysis — fully self-hosted on VirtualBox, with no internet-facing components.
 
-![Status](https://img.shields.io/badge/status-complete-brightgreen)
+![Status](https://img.shields.io/badge/status-in%20progress-yellow)
 ![Platform](https://img.shields.io/badge/platform-VirtualBox-blue)
 ![OS](https://img.shields.io/badge/DC-Windows%20Server%202025-0078D6)
 ![Attacker](https://img.shields.io/badge/Attacker-Kali%20Linux-557C94)
