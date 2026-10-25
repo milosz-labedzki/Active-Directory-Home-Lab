@@ -51,7 +51,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Hashcat · Responder
 
 ## ✅ Status
-🟢 **Complete**
+🟡 **In progress / actively developed**
 
 ✅ Domain Controller deployed and verified
 ✅ AD structure and Kerberoastable service account configured
@@ -60,5 +60,10 @@ VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Has
 ✅ Blue Team detection write-up completed for both attacks (log analysis + tested, verified mitigations)
 
 ---
+## 🔜 Roadmap
+- [ ] Add Splunk (SIEM) on a separate Ubuntu Server VM (Splunk01, 192.168.10.30)
+- [ ] Forward DC01 Windows event logs to Splunk with Universal Forwarder
+- [ ] Write Splunk detection searches for Kerberoasting (4769) and LLMNR/NBT-NS poisoning
+
 
 *This lab runs entirely within an isolated VirtualBox network with no internet-facing services. All credentials referenced are lab-only test values, generated solely for this project — including any intentional password reuse between accounts, which is part of the attack scenario, not a real-world credential leak.*
