@@ -6,13 +6,14 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 ![Platform](https://img.shields.io/badge/platform-VirtualBox-blue)
 ![OS](https://img.shields.io/badge/DC-Windows%20Server%202025-0078D6)
 ![Attacker](https://img.shields.io/badge/Attacker-Kali%20Linux-557C94)
+![SIEM](https://img.shields.io/badge/SIEM-Splunk%20(in%20progress)-orange)
 
 ## 🎯 Project Goals
 
 - Build a realistic, isolated Active Directory environment from scratch
 - Simulate common real-world attack techniques (Kerberoasting, LLMNR Poisoning)
 - Investigate and resolve modern hardening obstacles (e.g. AES-only Kerberos on Server 2025)
-- Analyze and detect these attacks from a Blue Team perspective
+- Analyze and detect these attacks from a Blue Team perspective, first by hand in Event Viewer, then automatically in a SIEM (Splunk)
 - Document the full process — including dead ends and fixes — for portfolio purposes
 
 ## 🧱 Lab Architecture
@@ -21,20 +22,36 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 |---|---|---|---|
 | DC01 | Domain Controller | Windows Server 2025 | 192.168.10.10 |
 | Kali | Attacker | Kali Linux | 192.168.10.20 |
+| Splunk01 | SIEM (Splunk Enterprise, setup in progress) | Ubuntu Server 24.04 LTS | 192.168.10.30 |
 
 **Domain:** `corp.local` (NetBIOS: `CORP`)
-**Network mode:** VirtualBox Internal Network (`LabNetwork`) — fully isolated, no external connectivity by design
+**Network mode:** VirtualBox Internal Network (`intnet`) — isolated, no external connectivity by design. Splunk01 also has a NAT adapter that is used only to download installers during setup.
+
+Logs are collected on a separate machine (Splunk01) instead of the monitored host, so an attacker on DC01 cannot easily tamper with the evidence.
 
 ## 📂 Documentation
 
+Numbers show the order in which the documents were written; the groups show how they fit together.
+
+### 🧱 Foundation
 | # | Document | Summary |
 |---|---|---|
-| 01 | [Network Setup](docs/01-network-setup.md) | VirtualBox Internal Network configuration |
+| 01 | [Network Setup](docs/01-network-setup.md) | VirtualBox Internal Network configuration for DC01, Kali and Splunk01 |
 | 02 | [Domain Controller Setup](docs/02-domain-controller-setup.md) | AD DS install & forest promotion on Server 2025 |
 | 03 | [AD Users & OUs](docs/03-ad-users-and-ous.md) | OU structure, fictional users, Kerberoastable service account |
+| 07 | Splunk SIEM Setup *(in progress)* | Splunk Enterprise on a separate Ubuntu VM, Universal Forwarder on DC01 |
+
+### ⚔️ Attacks
+| # | Document | Summary |
+|---|---|---|
 | 04 | [Kerberoasting Attack](docs/04-kerberoasting-attack.md) | SPN discovery → AES256 TGS extraction → offline crack |
 | 05 | [LLMNR Poisoning Attack](docs/05-llmnr-poisoning-attack.md) | Responder-based credential capture |
-| 06 | [Detection (Blue Team)](docs/06-detection-blue-team.md) | Event 4769/4020 analysis, encryption-type pitfall, tested LLMNR/NBT-NS/mDNS mitigation |
+
+### 🔍 Detection (Blue Team)
+| # | Document | Summary |
+|---|---|---|
+| 06 | [Detection in Event Viewer](docs/06-Blue-Team-detection-write-up.md) | Event 4769/4020 analysis, encryption-type pitfall, tested LLMNR/NBT-NS/mDNS mitigation |
+| 08 | Detection in Splunk *(in progress)* | The same detections rebuilt as automated Splunk searches |
 
 ## 🔑 Key Learnings & Skills Demonstrated
 
@@ -48,7 +65,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 
 ## 🛠️ Tools Used
 
-VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Hashcat · Responder
+VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell · Impacket · Hashcat · Responder
 
 ## ✅ Status
 🟡 **In progress / actively developed**
@@ -58,12 +75,15 @@ VirtualBox · Windows Server 2025 · Kali Linux · PowerShell · Impacket · Has
 ✅ Kerberoasting attack completed end-to-end (AES256 TGS extraction + offline crack)
 ✅ LLMNR/NBT-NS poisoning attack completed end-to-end (broadcast capture + offline crack)
 ✅ Blue Team detection write-up completed for both attacks (log analysis + tested, verified mitigations)
+🚧 Splunk SIEM integration in progress
+
+## 🔜 Roadmap
+
+- [x] Splunk01 VM (Ubuntu Server 24.04 LTS) added to the isolated network with a static IP (192.168.10.30)
+- [ ] Install Splunk Enterprise on Splunk01
+- [ ] Forward DC01 Windows event logs to Splunk with the Universal Forwarder
+- [ ] Write Splunk detection searches for Kerberoasting (Event 4769) and LLMNR/NBT-NS poisoning
 
 ---
-## 🔜 Roadmap
-- [ ] Add Splunk (SIEM) on a separate Ubuntu Server VM (Splunk01, 192.168.10.30)
-- [ ] Forward DC01 Windows event logs to Splunk with Universal Forwarder
-- [ ] Write Splunk detection searches for Kerberoasting (4769) and LLMNR/NBT-NS poisoning
-
 
 *This lab runs entirely within an isolated VirtualBox network with no internet-facing services. All credentials referenced are lab-only test values, generated solely for this project — including any intentional password reuse between accounts, which is part of the attack scenario, not a real-world credential leak.*
