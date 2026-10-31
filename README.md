@@ -22,10 +22,12 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 |---|---|---|---|
 | DC01 | Domain Controller | Windows Server 2025 | 192.168.10.10 |
 | Kali | Attacker | Kali Linux | 192.168.10.20 |
-| Splunk01 | SIEM (Splunk Enterprise, setup in progress) | Ubuntu Server 24.04 LTS | 192.168.10.30 |
+| Splunk01 | SIEM (Splunk Enterprise) | Ubuntu Server 24.04 LTS | 192.168.10.30 |
 
 **Domain:** `corp.local` (NetBIOS: `CORP`)
-**Network mode:** VirtualBox Internal Network (`intnet`) — isolated, no external connectivity by design. Splunk01 also has a NAT adapter that is used only to download installers during setup.
+**Network mode:** VirtualBox Internal Network (`intnet`) — isolated, no external connectivity by design. Splunk01 also has a NAT adapter, used to download installers and, through port forwarding bound to `127.0.0.1` only, to reach SSH and Splunk Web from the host computer.
+
+**Note on names:** DC01 is the lab's name for the Domain Controller. Its Windows computer name is `root` (`root.corp.local`), which is why its events show `host=root` in Splunk.
 
 Logs are collected on a separate machine (Splunk01) instead of the monitored host, so an attacker on DC01 cannot easily tamper with the evidence.
 
@@ -39,7 +41,7 @@ Numbers show the order in which the documents were written; the groups show how 
 | 01 | [Network Setup](docs/01-network-setup.md) | VirtualBox Internal Network configuration for DC01, Kali and Splunk01 |
 | 02 | [Domain Controller Setup](docs/02-domain-controller-setup.md) | AD DS install & forest promotion on Server 2025 |
 | 03 | [AD Users & OUs](docs/03-ad-users-and-ous.md) | OU structure, fictional users, Kerberoastable service account |
-| 07 | Splunk SIEM Setup *(in progress)* | Splunk Enterprise on a separate Ubuntu VM, Universal Forwarder on DC01 |
+| 07 | [Splunk SIEM Setup](docs/07-splunk-siem-setup.md) | Splunk Enterprise on a separate Ubuntu VM, Universal Forwarder on DC01 sending the Security log |
 
 ### ⚔️ Attacks
 | # | Document | Summary |
@@ -62,10 +64,11 @@ Numbers show the order in which the documents were written; the groups show how 
 - **Operational hygiene:** redacting plaintext credentials from documentation before publishing
 - **Broadcast poisoning:** used Responder to capture NTLMv2 credentials by exploiting LLMNR/NBT-NS fallback, and identified password reuse as a result
 - **Blue Team detection:** identified Event IDs 4769 (Kerberoasting) and 4020 (NTLM fallback from LLMNR/NBT-NS poisoning) as evidence sources, showed why the standard RC4-encryption-type heuristic fails under AES-only hardening, and iteratively tested a defensive fix — disabling only LLMNR/NBT-NS left an mDNS-shaped gap, which was then closed and verified end-to-end
+- **SIEM deployment:** installed Splunk Enterprise on a dedicated Ubuntu VM, running as a non-root `splunk` user under `systemd`, and forwarded the DC's Security log with the Universal Forwarder — the installer was delivered over the isolated network, so DC01 never needed internet access
 
 ## 🛠️ Tools Used
 
-VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell · Impacket · Hashcat · Responder
+VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell · Impacket · Hashcat · Responder · Splunk Enterprise · Splunk Universal Forwarder
 
 ## ✅ Status
 🟡 **In progress / actively developed**
@@ -75,13 +78,14 @@ VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell �
 ✅ Kerberoasting attack completed end-to-end (AES256 TGS extraction + offline crack)
 ✅ LLMNR/NBT-NS poisoning attack completed end-to-end (broadcast capture + offline crack)
 ✅ Blue Team detection write-up completed for both attacks (log analysis + tested, verified mitigations)
-🚧 Splunk SIEM integration in progress
+✅ Splunk Enterprise installed and DC01 Security log forwarded to it
+🚧 Splunk detection searches in progress
 
 ## 🔜 Roadmap
 
 - [x] Splunk01 VM (Ubuntu Server 24.04 LTS) added to the isolated network with a static IP (192.168.10.30)
-- [ ] Install Splunk Enterprise on Splunk01
-- [ ] Forward DC01 Windows event logs to Splunk with the Universal Forwarder
+- [x] Install Splunk Enterprise on Splunk01
+- [x] Forward DC01 Windows event logs to Splunk with the Universal Forwarder
 - [ ] Write Splunk detection searches for Kerberoasting (Event 4769) and LLMNR/NBT-NS poisoning
 
 ---
