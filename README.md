@@ -6,7 +6,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 ![Platform](https://img.shields.io/badge/platform-VirtualBox-blue)
 ![OS](https://img.shields.io/badge/DC-Windows%20Server%202025-0078D6)
 ![Attacker](https://img.shields.io/badge/Attacker-Kali%20Linux-557C94)
-![SIEM](https://img.shields.io/badge/SIEM-Splunk%20(in%20progress)-orange)
+![SIEM](https://img.shields.io/badge/SIEM-Splunk-brightgreen)
 
 ## 🎯 Project Goals
 
@@ -53,7 +53,7 @@ Numbers show the order in which the documents were written; the groups show how 
 | # | Document | Summary |
 |---|---|---|
 | 06 | [Detection in Event Viewer](docs/06-Blue-Team-detection-write-up.md) | Event 4769/4020 analysis, encryption-type pitfall, tested LLMNR/NBT-NS/mDNS mitigation |
-| 08 | Detection in Splunk *(in progress)* | The same detections rebuilt as automated Splunk searches |
+| 08 | [Detection in Splunk](docs/08-splunk-detection.md) | Event 4769/4020 rebuilt as Splunk searches; behavioral detection survives AES-only hardening |
 
 ## 🔑 Key Learnings & Skills Demonstrated
 
@@ -65,6 +65,7 @@ Numbers show the order in which the documents were written; the groups show how 
 - **Broadcast poisoning:** used Responder to capture NTLMv2 credentials by exploiting LLMNR/NBT-NS fallback, and identified password reuse as a result
 - **Blue Team detection:** identified Event IDs 4769 (Kerberoasting) and 4020 (NTLM fallback from LLMNR/NBT-NS poisoning) as evidence sources, showed why the standard RC4-encryption-type heuristic fails under AES-only hardening, and iteratively tested a defensive fix — disabling only LLMNR/NBT-NS left an mDNS-shaped gap, which was then closed and verified end-to-end
 - **SIEM deployment:** installed Splunk Enterprise on a dedicated Ubuntu VM, running as a non-root `splunk` user under `systemd`, and forwarded the DC's Security log with the Universal Forwarder — the installer was delivered over the isolated network, so DC01 never needed internet access
+- **Behavioral detection engineering:** since AES-only hardening makes the classic "RC4 = Kerberoasting" heuristic useless, built a Splunk search around request volume and service concentration per account instead; for LLMNR/NBT-NS, isolated the exact NTLM fallback reason code (`Reason_ID=10`) that distinguishes poisoning-triggered authentication from ordinary NTLM traffic, with zero false positives across two separate attack sessions
 
 ## 🛠️ Tools Used
 
@@ -79,14 +80,14 @@ VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell �
 ✅ LLMNR/NBT-NS poisoning attack completed end-to-end (broadcast capture + offline crack)
 ✅ Blue Team detection write-up completed for both attacks (log analysis + tested, verified mitigations)
 ✅ Splunk Enterprise installed and DC01 Security log forwarded to it
-🚧 Splunk detection searches in progress
+✅ Splunk detection searches built and verified for both attacks
 
 ## 🔜 Roadmap
 
 - [x] Splunk01 VM (Ubuntu Server 24.04 LTS) added to the isolated network with a static IP (192.168.10.30)
 - [x] Install Splunk Enterprise on Splunk01
 - [x] Forward DC01 Windows event logs to Splunk with the Universal Forwarder
-- [ ] Write Splunk detection searches for Kerberoasting (Event 4769) and LLMNR/NBT-NS poisoning
+- [x] Write Splunk detection searches for Kerberoasting (Event 4769) and LLMNR/NBT-NS poisoning
 
 ---
 
