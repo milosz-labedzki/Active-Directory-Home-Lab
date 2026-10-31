@@ -14,7 +14,7 @@ The lab uses VirtualBox's **Internal Network** mode, named `intnet`. Internal Ne
 | DC01 (Windows Server 2025) | Domain Controller | Adapter 1 | Internal Network (`intnet`) | 192.168.10.10 |
 | Kali Linux | Attacker | Adapter 1 | NAT | (dynamic, internet access) |
 | Kali Linux | Attacker | Adapter 2 | Internal Network (`intnet`) | 192.168.10.20 |
-| Splunk01 (Ubuntu Server 24.04 LTS) | SIEM | Adapter 1 | NAT | (dynamic, internet access — used only during setup) |
+| Splunk01 (Ubuntu Server 24.04 LTS) | SIEM | Adapter 1 | NAT | (dynamic, internet access and localhost port forwarding) |
 | Splunk01 (Ubuntu Server 24.04 LTS) | SIEM | Adapter 2 | Internal Network (`intnet`) | 192.168.10.30 |
 
 ## 2. Domain Controller — Network Adapter
@@ -40,7 +40,7 @@ Kali Linux uses **two** network adapters:
 
 Splunk01 follows the same two-adapter pattern as Kali Linux:
 
-- **Adapter 1 — NAT**: provides outbound internet access, used only to download installers during setup (for example the Splunk Enterprise package). It plays no part in log collection.
+- **Adapter 1 — NAT**: provides outbound internet access, used to download installers (for example the Splunk Enterprise package). It also carries two port forwarding rules, bound to `127.0.0.1` only, so the host computer can reach SSH and Splunk Web (see document 07). It plays no part in log collection.
 - **Adapter 2 — Internal Network (`intnet`)**: the actual lab network. DC01 will send its logs to Splunk01 over this link.
 
 ![VirtualBox network settings — Splunk01 NAT adapter](../images/01-07-virtualbox-network-splunk-nat-adapter.png)
@@ -82,6 +82,21 @@ sudo nmcli connection up lab-static
 
 Ubuntu Server sets its network in a Netplan configuration file: `/etc/netplan/50-cloud-init.yaml`. In this file, `enp0s3` (the NAT adapter) gets its address from VirtualBox automatically, and `enp0s8` (the Internal Network adapter) is given a fixed address: `192.168.10.30/24`.
 
+```bash
+sudo cat /etc/netplan/50-cloud-init.yaml
+```
+
+```yaml
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: true
+    enp0s8:
+      addresses:
+        - 192.168.10.30/24
+```
+
 ![Netplan configuration on Splunk01](../images/01-09-splunk-netplan-config.png)
 
 After saving the file, the new settings are applied with:
@@ -90,15 +105,15 @@ After saving the file, the new settings are applied with:
 sudo netplan apply
 ```
 
-Then `ip a` shows the result:
+Then `ip -br a` shows the result in a short format, one line per interface (`-br` means brief):
 
 ```bash
-ip a
+ip -br a
 ```
 
 Confirms Splunk01 holds `192.168.10.30/24` on `enp0s8` (the Internal Network adapter), separate from `enp0s3` (NAT, `10.0.2.15`).
 
-![ip a output on Splunk01](../images/01-10-splunk-ip-a.png)
+![ip -br a output on Splunk01](../images/01-10-splunk-ip-a.png)
 
 ## 6. Connectivity Test
 
@@ -134,4 +149,4 @@ The test was stopped manually (`Ctrl+C`) after 10 packets. Result: 10/10 packets
 
 **Next step:** Install Active Directory Domain Services and promote DC01 to the first Domain Controller in a new forest (see `02-domain-controller-setup.md`).
 
-*Splunk01 was added to the network after the rest of the lab was built. Its Splunk Enterprise setup continues in document 07 (Splunk SIEM Setup).*
+*Splunk01 was added to the network after the rest of the lab was built. Its Splunk Enterprise setup is covered in [07 - Splunk SIEM Setup](07-Splunk-SIEM-setup.md).*
