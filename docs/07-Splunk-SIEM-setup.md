@@ -1,152 +1,152 @@
-# 01 - Network Setup
+# 07 - Splunk SIEM Setup
 
-This document covers the VirtualBox network configuration used to build an isolated lab environment for the Domain Controller (DC01), the attacker machine (Kali Linux) and the SIEM server (Splunk01).
+This document covers installing Splunk Enterprise on the Splunk01 virtual machine and forwarding the Windows Security log from the Domain Controller to it with the Splunk Universal Forwarder. After this step, the lab has one central place to collect and search logs. The detection searches themselves are built in document 08.
 
-## 1. Network Architecture
+## 1. Design
 
-The lab uses VirtualBox's **Internal Network** mode, named `intnet`. Internal Network traffic is visible only between VMs attached to the same network name — there is no route to the host machine, the home network, or the internet. This guarantees the lab stays fully isolated, which matters for two reasons:
+Logs are stored on a separate machine (Splunk01) instead of on the monitored host. This way, an attacker who gets onto the Domain Controller cannot easily tamper with the evidence.
 
-- Attacks performed later in this project (Kerberoasting, LLMNR/NBT-NS Poisoning) never touch anything outside the lab
-- The environment is fully reproducible and safe to experiment in without any risk to other devices on the network
+| Component | Machine | Role | Port |
+|---|---|---|---|
+| Splunk Enterprise 10.6.1.1 | Splunk01 (`192.168.10.30`) | Receives, stores and searches logs | `9997` (receiving), `8000` (Splunk Web) |
+| Universal Forwarder | DC01 (`192.168.10.10`) | Sends the Windows Security log | to `192.168.10.30:9997` |
 
-| Machine | Role | Adapter | Network mode | IP Address |
+All log traffic travels over the isolated Internal Network (`intnet`).
+
+**Note on names:** DC01 is the lab's name for the Domain Controller. Its Windows computer name is `root` (`root.corp.local`), so events in Splunk show `host=root`.
+
+## 2. Access to Splunk01 from the Host Computer
+
+The Splunk01 console in VirtualBox does not allow copy and paste, and Splunk Web needs a browser. Both problems are solved with two port forwarding rules on the Splunk01 **NAT adapter** (Settings → Network → Adapter 1 → Advanced → Port Forwarding):
+
+| Name | Protocol | Host address | Host port | Guest port |
 |---|---|---|---|---|
-| DC01 (Windows Server 2025) | Domain Controller | Adapter 1 | Internal Network (`intnet`) | 192.168.10.10 |
-| Kali Linux | Attacker | Adapter 1 | NAT | (dynamic, internet access) |
-| Kali Linux | Attacker | Adapter 2 | Internal Network (`intnet`) | 192.168.10.20 |
-| Splunk01 (Ubuntu Server 24.04 LTS) | SIEM | Adapter 1 | NAT | (dynamic, internet access and localhost port forwarding) |
-| Splunk01 (Ubuntu Server 24.04 LTS) | SIEM | Adapter 2 | Internal Network (`intnet`) | 192.168.10.30 |
+| `ssh` | TCP | `127.0.0.1` | `2222` | `22` |
+| `splunk-web` | TCP | `127.0.0.1` | `8000` | `8000` |
 
-## 2. Domain Controller — Network Adapter
+The host address `127.0.0.1` means only this computer can use these ports — they are not open to the home network. The lab network `intnet` is not affected.
 
-DC01 uses a single adapter attached to the Internal Network `intnet`.
+Splunk01 did not have a running SSH server, so it was installed first:
 
-![VirtualBox network settings — Domain Controller](../images/01-01-virtualbox-network-dc-settings.png)
+```bash
+systemctl is-active ssh
+sudo apt update && sudo apt install -y openssh-server
+```
 
-## 3. Kali Linux — Dual Adapter Setup
-
-Kali Linux uses **two** network adapters:
-
-- **Adapter 1 — NAT**: provides outbound internet access, used only for installing and updating tools (e.g. `apt update`, `pip install --upgrade impacket`). This adapter has no route to the lab network and plays no part in the attacks themselves.
-- **Adapter 2 — Internal Network (`intnet`)**: the actual lab network, used to communicate with DC01 and carry out attacks.
-
-![VirtualBox network settings — Kali NAT adapter](../images/01-02-virtualbox-network-kali-nat-adapter.png)
-
-![VirtualBox network settings — Kali Internal Network adapter](../images/01-03-virtualbox-network-kali-internal-adapter.png)
-
-**Why two adapters instead of one:** Internal Network has no internet access by design — that's the entire point of using it. Rather than repeatedly switching a single adapter between NAT and Internal Network (and risking forgetting to switch back before an attack), a second, dedicated adapter keeps both connections available at once without compromising the isolation of the lab network.
-
-## 4. Splunk01 — Dual Adapter Setup
-
-Splunk01 follows the same two-adapter pattern as Kali Linux:
-
-- **Adapter 1 — NAT**: provides outbound internet access, used to download installers (for example the Splunk Enterprise package). It also carries two port forwarding rules, bound to `127.0.0.1` only, so the host computer can reach SSH and Splunk Web (see document 07). It plays no part in log collection.
-- **Adapter 2 — Internal Network (`intnet`)**: the actual lab network. DC01 will send its logs to Splunk01 over this link.
-
-![VirtualBox network settings — Splunk01 NAT adapter](../images/01-07-virtualbox-network-splunk-nat-adapter.png)
-
-![VirtualBox network settings — Splunk01 Internal Network adapter](../images/01-08-virtualbox-network-splunk-internal-adapter.png)
-
-**Why a separate machine for Splunk:** the logs are stored on Splunk01 instead of on the monitored host. This way, an attacker who gets onto DC01 cannot easily tamper with the evidence.
-
-## 5. Verifying IP Configuration
-
-### Domain Controller
+From then on, commands were pasted from PowerShell on the host:
 
 ```powershell
-ipconfig
+ssh -p 2222 miczek@127.0.0.1
 ```
 
-Confirms DC01 holds `192.168.10.10` on its Ethernet adapter.
+## 3. Installing Splunk Enterprise
 
-![ipconfig output on Domain Controller](../images/01-04-dc-ipconfig.png)
+Splunk01 had about 4 GB of RAM and 44 GB of free disk space, which is enough for a lab with a small amount of logs.
 
-### Kali Linux
+The installer (`.deb` package for Ubuntu) was downloaded on the host computer and copied to Splunk01 over SSH. The target in `scp` must end with `:/tmp/` — without the colon, `scp` tries to copy the file locally and fails.
+
+```powershell
+scp -P 2222 .\splunk-10.6.1.1-b2ae2962645c-linux-amd64.deb miczek@127.0.0.1:/tmp/
+```
+
+On Splunk01, the copy was checked and the package was installed:
 
 ```bash
-ip a
+ls -lh /tmp/splunk*.deb
+sudo dpkg -i /tmp/splunk-*.deb
 ```
 
-Confirms Kali holds `192.168.10.20/24` on `eth1` (the Internal Network adapter), separate from `eth0` (NAT).
+The package installs Splunk into `/opt/splunk`.
 
-![ip a output on Kali](../images/01-05-kali-ip-a.png)
+## 4. First Start as a Dedicated User
 
-**Note:** the static IP on `eth1` occasionally resets after the interface is reconnected or the NetworkManager service restarts. If `ip a` shows no IPv4 address on `eth1`, it can be reassigned manually:
+Splunk should not run as `root`. A `splunk` system user already existed on Splunk01, so the installed files were given to it and Splunk was started as that user:
 
 ```bash
-sudo nmcli connection add type ethernet ifname eth1 con-name lab-static ipv4.method manual ipv4.addresses 192.168.10.20/24
-sudo nmcli connection up lab-static
+sudo chown -R splunk:splunk /opt/splunk
+sudo -i -u splunk /opt/splunk/bin/splunk start --accept-license
 ```
 
-### Splunk01
+On the first start, Splunk asks for an administrator username and password. The characters of the password are not shown while typing. When the start finishes, Splunk prints the address of Splunk Web.
 
-Ubuntu Server sets its network in a Netplan configuration file: `/etc/netplan/50-cloud-init.yaml`. In this file, `enp0s3` (the NAT adapter) gets its address from VirtualBox automatically, and `enp0s8` (the Internal Network adapter) is given a fixed address: `192.168.10.30/24`.
+![First start of Splunk Enterprise as the splunk user](../images/07-01-splunk-first-start.png)
+
+Splunk Web is then available in a browser on the host at `http://127.0.0.1:8000` (through the port forwarding rule from section 2).
+
+![Splunk Web home page after the first login](../images/07-02-splunk-web-home.png)
+
+## 5. Enabling the Receiving Port
+
+Splunk must listen on a port to accept logs from forwarders. The default port is `9997`. In Splunk Web: **Settings → Forwarding and receiving → Configure receiving → New Receiving Port**.
+
+![Receiving port 9997 enabled in Splunk](../images/07-03-splunk-receiving-port-9997.png)
+
+## 6. Installing the Universal Forwarder on DC01
+
+DC01 is connected only to `intnet` and has no internet access, so the installer cannot be downloaded on it. Giving DC01 a NAT adapter would weaken the isolation of the lab, so Splunk01 was used as a temporary file server inside the lab network instead:
+
+1. The Universal Forwarder 64-bit `.msi` installer was downloaded on the host and copied to Splunk01 the same way as the Splunk package in section 3 (`scp` to `/tmp/`).
+2. On Splunk01, a simple web server was started in the folder with the file:
 
 ```bash
-sudo cat /etc/netplan/50-cloud-init.yaml
+cd /tmp
+python3 -m http.server 8080
 ```
 
-```yaml
-network:
-  version: 2
-  ethernets:
-    enp0s3:
-      dhcp4: true
-    enp0s8:
-      addresses:
-        - 192.168.10.30/24
+3. On DC01, the file was downloaded in a browser from `http://192.168.10.30:8080`. After that, the web server on Splunk01 was stopped with `Ctrl+C`.
+
+In the installer wizard, the important settings were:
+
+- **Windows Event Logs:** only **Security Log** is selected. The Security log contains the Kerberos events (such as Event ID 4769) needed to detect Kerberoasting.
+
+![Universal Forwarder installer — event logs selection](../images/07-04-uf-install-event-logs.png)
+
+- **Deployment Server:** left empty. A deployment server is a different component (port `8089`) and is not used in this lab.
+- **Receiving Indexer:** host `192.168.10.30`, port `9997` — this is where the forwarder sends the logs.
+
+![Universal Forwarder installer — receiving indexer](../images/07-05-uf-install-receiving-indexer.png)
+
+- **Administrator account:** a local account of the forwarder itself, with a password chosen by hand. It is not used to log in to Splunk Web.
+
+## 7. Verifying the Log Flow
+
+After the installation, the Security log from DC01 started to arrive in Splunk. This search in Splunk Web (time range: last 15 minutes) confirms it:
+
+```
+index=main source="WinEventLog:Security"
 ```
 
-![Netplan configuration on Splunk01](../images/01-09-splunk-netplan-config.png)
+The search returned 132 events in 15 minutes, all with `host=root` (the Domain Controller). The first events are logon and logoff events (for example Event IDs 4624, 4634 and 4672). This confirms the whole chain works: DC01 → Universal Forwarder → Splunk01.
 
-After saving the file, the new settings are applied with:
+![Security events from DC01 in Splunk](../images/07-06-splunk-dc01-security-events.png)
+
+## 8. Running Splunk as a Service
+
+So that Splunk starts by itself every time Splunk01 boots, it was registered as a `systemd` service that runs as the `splunk` user. The documentation requires stopping Splunk before changing the boot setting:
 
 ```bash
-sudo netplan apply
+sudo -i -u splunk /opt/splunk/bin/splunk stop
+sudo /opt/splunk/bin/splunk enable boot-start -systemd-managed 1 -user splunk -group splunk
+sudo /opt/splunk/bin/splunk start
+systemctl status Splunkd --no-pager
 ```
 
-Then `ip -br a` shows the result in a short format, one line per interface (`-br` means brief):
+- The second command creates the service `Splunkd`.
+- The third command starts Splunk again, now as that service.
+- The last command shows its state: `enabled` (starts at boot) and `active (running)`.
 
-```bash
-ip -br a
-```
+![Splunkd running as a systemd service](../images/07-07-splunk-systemd-service.png)
 
-Confirms Splunk01 holds `192.168.10.30/24` on `enp0s8` (the Internal Network adapter), separate from `enp0s3` (NAT, `10.0.2.15`).
+## Problems Encountered
 
-![ip -br a output on Splunk01](../images/01-10-splunk-ip-a.png)
-
-## 6. Connectivity Test
-
-### Kali → DC01
-
-With Kali and DC01 configured, connectivity between them was confirmed with a simple ping test:
-
-```bash
-ping -c 3 192.168.10.10
-```
-
-Result: 3/3 packets received, 0% packet loss — confirming the Internal Network link between both machines is functional.
-
-![Successful ping test from Kali to Domain Controller](../images/01-06-ping-test-success.png)
-
-### Splunk01 → DC01
-
-The same test was done from Splunk01:
-
-```bash
-ping 192.168.10.10
-```
-
-The test was stopped manually (`Ctrl+C`) after 10 packets. Result: 10/10 packets received, 0% packet loss, average round-trip time 0.891 ms — confirming the Internal Network link between Splunk01 and DC01 is functional. This is the link the Windows event logs will travel over later.
-
-![Successful ping test from Splunk01 to Domain Controller](../images/01-11-ping-test-dc-splunk.png)
+- **SSH server missing on Splunk01** — `systemctl is-active ssh` returned `inactive`; fixed by installing `openssh-server` (section 2).
+- **`scp` copied nothing** — the target had no `:/tmp/` part, so `scp` looked for a local path and reported `0 file(s) copied`. Fixed by adding the colon and the folder.
+- **Deployment Server vs. Receiving Indexer** — the forwarder installer has two similar screens. The first one (Deployment Server, port `8089`) must stay empty. The log destination `192.168.10.30:9997` goes only on the Receiving Indexer screen.
 
 ## Status
 
-✅ Isolated Internal Network (`intnet`) configured and verified between DC01 and Kali Linux.
+✅ Splunk Enterprise installed on Splunk01 and running as a service under the `splunk` user.
 
-✅ Splunk01 added to `intnet` with the static IP `192.168.10.30` and verified against DC01.
+✅ Universal Forwarder installed on DC01; the Windows Security log arrives in Splunk.
 
-**Next step:** Install Active Directory Domain Services and promote DC01 to the first Domain Controller in a new forest (see `02-domain-controller-setup.md`).
-
-*Splunk01 was added to the network after the rest of the lab was built. Its Splunk Enterprise setup is covered in [07 - Splunk SIEM Setup](07-Splunk-SIEM-setup.md).*
+**Next step:** Build the detection searches for Kerberoasting (Event 4769) and LLMNR/NBT-NS poisoning in Splunk (see document 08).
