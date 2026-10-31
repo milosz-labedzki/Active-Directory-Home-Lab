@@ -41,7 +41,7 @@ Numbers show the order in which the documents were written; the groups show how 
 | 01 | [Network Setup](docs/01-network-setup.md) | VirtualBox Internal Network configuration for DC01, Kali and Splunk01 |
 | 02 | [Domain Controller Setup](docs/02-domain-controller-setup.md) | AD DS install & forest promotion on Server 2025 |
 | 03 | [AD Users & OUs](docs/03-ad-users-and-ous.md) | OU structure, fictional users, Kerberoastable service account |
-| 07 | [Splunk SIEM Setup](docs/07-splunk-siem-setup.md) | Splunk Enterprise on a separate Ubuntu VM, Universal Forwarder on DC01 sending the Security log |
+| 07 | [Splunk SIEM Setup](docs/07-Splunk-SIEM-setup.md) | Splunk Enterprise on a separate Ubuntu VM, Universal Forwarder on DC01 sending the Security log |
 
 ### ⚔️ Attacks
 | # | Document | Summary |
