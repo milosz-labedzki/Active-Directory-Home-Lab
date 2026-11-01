@@ -2,7 +2,14 @@
 
 This document rebuilds the two detections from `06-Blue-Team-detection-write-up.md` (Kerberoasting and LLMNR/NBT-NS poisoning) as Splunk searches, using the log pipeline set up in `07-Splunk-SIEM-setup.md`. Both attacks were re-run against DC01 to generate fresh events to search for.
 
-## 1. Kerberoasting (Event 4769)
+The goal in both cases was a detection that holds up once the obvious indicator is gone — encryption type for Kerberoasting, the captured hash itself for LLMNR — and instead relies on a behavioral pattern in the logs, the same thing a real SOC detection rule would need to do.
+
+| Attack | MITRE ATT&CK Technique | Splunk Event |
+|---|---|---|
+| Kerberoasting | [T1558.003 — Steal or Forge Kerberos Tickets: Kerberoasting](https://attack.mitre.org/techniques/T1558/003/) | Event 4769 |
+| LLMNR/NBT-NS Poisoning | [T1557.001 — Adversary-in-the-Middle: LLMNR/NBT-NS Poisoning and SMB Relay](https://attack.mitre.org/techniques/T1557/001/) | Event 4020 |
+
+## 1. Kerberoasting (Event 4769) — MITRE ATT&CK T1558.003
 
 ### 1.1 Why Encryption Type Still Doesn't Give It Away
 
@@ -40,7 +47,14 @@ Run over `All time`, three accounts remain: `Administrator` (29 requests across 
 
 **Limitation:** this search was run over the entire log history (`All time`), which is fine for a small lab but too loose for production — a legitimate user would also eventually cross the threshold of 4 *different* services over weeks or months. A production version would add a time window (e.g. `earliest=-1h`) and specifically flag accounts where `dc(Service_Name)` is low relative to `count` — many requests, but for very few distinct services — rather than just counting total requests.
 
-## 2. LLMNR/NBT-NS Poisoning (Event 4020)
+### 1.4 Triage Notes
+
+If this fired as a real alert, next steps would be:
+- Check `Client_Address` against the asset inventory — an unrecognized host is the strongest signal.
+- Confirm whether the requesting account has any legitimate reason to touch that service.
+- Reset the service account's password and review subsequent logons (Event 4624) using it.
+
+## 2. LLMNR/NBT-NS Poisoning (Event 4020) — MITRE ATT&CK T1557.001
 
 ### 2.1 Locating the Event
 
@@ -66,18 +80,16 @@ Restart-Service SplunkForwarder
 
 ### 2.2 Re-triggering the Attack
 
-The LLMNR/NBT-NS mitigation tested and left enabled at the end of document 06 (LLMNR disabled via `EnableMulticast=0`, NetBIOS disabled via `TcpipNetbiosOptions=2`) was still active on DC01, and silently blocked the attack from generating any traffic to detect. Both settings were reverted temporarily:
+The LLMNR/NBT-NS mitigation tested and left enabled at the end of document 06 was still active on DC01, and silently blocked the attack from generating any traffic to detect. Both settings were reverted temporarily, through the same two places configured in document 06:
 
-```powershell
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" /v EnableMulticast /t REG_DWORD /d 1 /f
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces\Tcpip_{<adapter GUID>}" /v NetbiosOptions /t REG_DWORD /d 0 /f
-Disable-NetAdapter -Name "Ethernet" -Confirm:$false
-Enable-NetAdapter -Name "Ethernet" -Confirm:$false
-```
+- **LLMNR** — Local Group Policy Editor (`gpedit.msc`) → **Computer Configuration → Administrative Templates → Network → DNS Client → Turn off multicast name resolution**, set to **Not Configured** to re-enable LLMNR.
+- **NetBIOS** — Network Connections → adapter **Properties** → IPv4 → **Advanced → WINS**, set back to **Default** (the same screen as `06-08-nbtns-disabled.png`, in the opposite state).
 
 With the mitigation reverted, the attack from `05-llmnr-poisoning-attack.md` was repeated: Responder (`sudo responder -I eth1`) on Kali, and a nonexistent share accessed on DC01 (`ls \\testowy456\test`) to trigger the DNS-resolution failure and LLMNR/NBT-NS fallback. Responder received the authentication attempt, confirming the attack succeeded again with the mitigation off.
 
-Once the detection search below was confirmed working, the mitigation was restored to its document 06 state (`EnableMulticast=0`, `TcpipNetbiosOptions=2`) and re-verified.
+Once the detection search below was confirmed working, both settings were switched back the same way — **Turn off multicast name resolution** set to **Enabled**, NetBIOS set back to **Disable NetBIOS over TCP/IP** — restoring the document 06 defenses.
+
+![LLMNR disabled again via Local Group Policy Editor](../images/08-05-gpedit-llmnr-disabled.png)
 
 ### 2.3 The Attack, Captured as a Raw Event
 
@@ -106,6 +118,12 @@ Run over `All time`, this returned 6 events across two separate attack sessions 
 ![Statistics table of NTLM fallback events across both attack sessions](../images/08-04-splunk-4020-stats-table.png)
 
 **Observation:** `Target_Domain` never matches the real domain (`CORP.LOCAL`) in any of the 6 events. In a larger environment, this could be added as a second filter (`Target_Domain!="CORP.LOCAL"`) to further narrow the search, though `Reason_ID=10` alone was already enough to isolate all six events with zero false positives in this lab.
+
+### 2.5 Triage Notes
+
+`Reason_ID=10` has few legitimate causes (mostly a typo'd path), so a repeated pattern is a strong signal. Next steps: check whether the account is privileged (here, `Administrator`), and identify which host answered the broadcast — this search alone can't show that; it needs packet capture or host-level investigation.
+
+Confirms the document 06 mitigation still works: it had to be deliberately disabled just to reproduce this attack.
 
 ## Status
 
