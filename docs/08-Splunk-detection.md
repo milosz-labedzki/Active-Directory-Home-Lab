@@ -101,27 +101,29 @@ The raw event shows `Reason: "The target name could not be resolved by Kerberos 
 
 ![Raw Event 4020 for the LLMNR fallback attempt](../images/08-03-splunk-4020-ntlm-event.png)
 
+**Dead end worth noting:** Microsoft's own NTLM auditing documentation ([KB5064479](https://support.microsoft.com/en-us/topic/b7ead732-6fc5-46a3-a943-27a4571d9e7b)) lists `Reason_ID 6` as "target name could not be resolved" and `10` as "NTLM was called via a loopback interface" — the opposite of what this DC01 build (Windows Server 2025) actually logs. This was confirmed by reading the raw event in Event Viewer, not just the Splunk-parsed field, so it isn't a parsing error — the published documentation and this build's actual behavior genuinely disagree, likely because this auditing feature was still being rolled out in stages at the time of writing. Because of this, the detection below filters on the `Reason` text itself instead of the numeric ID, which is reliable either way.
+
 ### 2.4 Building a Detection: NTLM Fallback After Failed Name Resolution
 
-`Reason_ID=10` is the field that matters: it is set specifically when NTLM is used because Kerberos (or another protocol) could not resolve the target name first — exactly the fallback that LLMNR/NBT-NS poisoning exploits. It filters out any ordinary, legitimate NTLM authentication, which would not carry this reason code.
+The `Reason` field is what matters: it's set specifically when NTLM is used because Kerberos (or another protocol) could not resolve the target name first — exactly the fallback that LLMNR/NBT-NS poisoning exploits. It filters out any ordinary, legitimate NTLM authentication, which would not carry this reason text.
 
 ```
-index=main source="WinEventLog:Microsoft-Windows-NTLM/Operational" EventCode=4020 Reason_ID=10
+index=main source="WinEventLog:Microsoft-Windows-NTLM/Operational" EventCode=4020 Reason="*could not be resolved*"
 | table _time, Username, Domain, Target_Network_Name, Target_Domain
 ```
 
-- **Line 1** filters to Event 4020 entries where the reason code is specifically "name could not be resolved."
+- **Line 1** filters to Event 4020 entries whose reason text is specifically "name could not be resolved" — matched on the text rather than the numeric `Reason_ID`, since that ID did not match Microsoft's own documentation on this build (see above).
 - **Line 2** lays out the result as a readable table: when it happened, which account authenticated, and what resource it was trying to reach.
 
 Run over `All time`, this returned 6 events across two separate attack sessions (one from `05-llmnr-poisoning-attack.md`, one re-run for this document) — all under the `Administrator` account, each with a different fabricated `Target_Domain` value supplied by Responder.
 
 ![Statistics table of NTLM fallback events across both attack sessions](../images/08-04-splunk-4020-stats-table.png)
 
-**Observation:** `Target_Domain` never matches the real domain (`CORP.LOCAL`) in any of the 6 events. In a larger environment, this could be added as a second filter (`Target_Domain!="CORP.LOCAL"`) to further narrow the search, though `Reason_ID=10` alone was already enough to isolate all six events with zero false positives in this lab.
+**Observation:** `Target_Domain` never matches the real domain (`CORP.LOCAL`) in any of the 6 events. In a larger environment, this could be added as a second filter (`Target_Domain!="CORP.LOCAL"`) to further narrow the search. The `Reason` filter alone isolated all six events with no unrelated events mixed in — but this only confirms the search catches true positives in this lab's small, controlled traffic; it is not a claim about the false-positive rate on a live network with real users.
 
 ### 2.5 Triage Notes
 
-`Reason_ID=10` has few legitimate causes (mostly a typo'd path), so a repeated pattern is a strong signal. Next steps: check whether the account is privileged (here, `Administrator`), and identify which host answered the broadcast — this search alone can't show that; it needs packet capture or host-level investigation.
+A repeated match on this search is a strong signal, since this reason has few legitimate causes (mostly a typo'd path). Next steps: check whether the account is privileged (here, `Administrator`), and identify which host answered the broadcast — this search alone can't show that; it needs packet capture or host-level investigation.
 
 Confirms the document 06 mitigation still works: it had to be deliberately disabled just to reproduce this attack.
 
@@ -129,7 +131,7 @@ Confirms the document 06 mitigation still works: it had to be deliberately disab
 
 ✅ Kerberoasting detection search built and verified: flags accounts requesting many tickets concentrated on a single service, independent of ticket encryption type.
 
-✅ LLMNR/NBT-NS poisoning detection search built and verified: flags NTLM authentication caused by failed name resolution (`Reason_ID=10`), catching both the original and re-run attack sessions.
+✅ LLMNR/NBT-NS poisoning detection search built and verified: flags NTLM authentication caused by failed name resolution, catching both the original and re-run attack sessions. Found and documented a discrepancy between Microsoft's published `Reason_ID` values and what this Windows Server 2025 build actually logs; the search was built to filter on the `Reason` text instead to avoid depending on the unreliable ID.
 
 ✅ The LLMNR/NBT-NS mitigation from document 06 was restored and re-verified as enabled on DC01 after testing.
 
