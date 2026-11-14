@@ -25,7 +25,7 @@ Isolated Active Directory lab built for Red Team attack simulation and Blue Team
 | Splunk01 | SIEM (Splunk Enterprise) | Ubuntu Server 24.04 LTS | 192.168.10.30 |
 
 **Domain:** `corp.local` (NetBIOS: `CORP`)
-**Network mode:** VirtualBox Internal Network (`intnet`) — isolated, no external connectivity by design. Splunk01 also has a NAT adapter, used to download installers and, through port forwarding bound to `127.0.0.1` only, to reach SSH and Splunk Web from the host computer.
+**Network mode:** this is a segmented AD lab — an isolated Internal Network (`intnet`) with controlled NAT connectivity on Kali and Splunk01, rather than a fully air-gapped environment. DC01 has only the `intnet` adapter and no route to the internet. Kali and Splunk01 each additionally have a NAT adapter, used for tool/installer downloads and (on Splunk01) port forwarding bound to `127.0.0.1` only, so the host computer can reach SSH and Splunk Web. IP forwarding (`/proc/sys/net/ipv4/ip_forward`) was checked and confirmed `0` on both Kali and Splunk01, confirming neither machine bridges traffic between `intnet` and NAT.
 
 **Note on names:** DC01 is the lab's name for the Domain Controller. Its Windows computer name is `root` (`root.corp.local`), which is why its events show `host=root` in Splunk.
 
