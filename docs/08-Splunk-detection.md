@@ -115,11 +115,11 @@ index=main source="WinEventLog:Microsoft-Windows-NTLM/Operational" EventCode=402
 - **Line 1** filters to Event 4020 entries whose reason text is specifically "name could not be resolved" — matched on the text rather than the numeric `Reason_ID`, since that ID did not match Microsoft's own documentation on this build (see above).
 - **Line 2** lays out the result as a readable table: when it happened, which account authenticated, and what resource it was trying to reach.
 
-Run over `All time`, this returned 6 events across two separate attack sessions (one from `05-llmnr-poisoning-attack.md`, one re-run for this document) — all under the `Administrator` account, each with a different fabricated `Target_Domain` value supplied by Responder.
+Run over `All time`, this returned 7 events across multiple attack/test sessions — all under the `Administrator` account, each with a different fabricated `Target_Domain` value supplied by Responder.
 
 ![Statistics table of NTLM fallback events across both attack sessions](../images/08-04-splunk-4020-stats-table.png)
 
-**Observation:** `Target_Domain` never matches the real domain (`CORP.LOCAL`) in any of the 6 events. In a larger environment, this could be added as a second filter (`Target_Domain!="CORP.LOCAL"`) to further narrow the search. The `Reason` filter alone isolated all six events with no unrelated events mixed in — but this only confirms the search catches true positives in this lab's small, controlled traffic; it is not a claim about the false-positive rate on a live network with real users.
+**Observation:** `Target_Domain` never matches the real domain (`CORP.LOCAL`) in any of the 7 events. In a larger environment, this could be added as a second filter (`Target_Domain!="CORP.LOCAL"`) to further narrow the search. The `Reason` filter alone isolated all seven events with no unrelated events mixed in — but this only confirms the search catches true positives in this lab's small, controlled traffic; it is not a claim about the false-positive rate on a live network with real users.
 
 ### 2.5 Triage Notes
 
@@ -131,8 +131,6 @@ Confirms the document 06 mitigation still works: it had to be deliberately disab
 
 ✅ Kerberoasting detection search built and verified: flags accounts requesting many tickets concentrated on a single service, independent of ticket encryption type.
 
-✅ LLMNR/NBT-NS poisoning detection search built and verified: flags NTLM authentication caused by failed name resolution, catching both the original and re-run attack sessions. Found and documented a discrepancy between Microsoft's published `Reason_ID` values and what this Windows Server 2025 build actually logs; the search was built to filter on the `Reason` text instead to avoid depending on the unreliable ID.
+✅ LLMNR/NBT-NS poisoning detection search built and verified: flags NTLM authentication caused by failed name resolution, catching all 7 fallback events logged across the project so far. Found and documented a discrepancy between Microsoft's published `Reason_ID` values and what this Windows Server 2025 build actually logs; the search was built to filter on the `Reason` text instead to avoid depending on the unreliable ID.
 
 ✅ The LLMNR/NBT-NS mitigation from document 06 was restored and re-verified as enabled on DC01 after testing.
-
-**Next step:** none currently planned — this closes out the attack/detection cycle for Kerberoasting and LLMNR/NBT-NS poisoning in this lab.
