@@ -2,7 +2,7 @@
 
 Isolated Active Directory lab built for Red Team attack simulation and Blue Team log analysis — fully self-hosted on VirtualBox, with no internet-facing components.
 
-![Status](https://img.shields.io/badge/status-in%20progress-yellow)
+![Status](https://img.shields.io/badge/status-complete-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-VirtualBox-blue)
 ![OS](https://img.shields.io/badge/DC-Windows%20Server%202025-0078D6)
 ![Attacker](https://img.shields.io/badge/Attacker-Kali%20Linux-557C94)
@@ -65,14 +65,15 @@ Numbers show the order in which the documents were written; the groups show how 
 - **Broadcast poisoning:** used Responder to capture NTLMv2 credentials by exploiting LLMNR/NBT-NS fallback, and identified password reuse as a result
 - **Blue Team detection:** identified Event IDs 4769 (Kerberoasting) and 4020 (NTLM fallback from LLMNR/NBT-NS poisoning) as evidence sources, showed why the standard RC4-encryption-type heuristic fails under AES-only hardening, and iteratively tested a defensive fix — disabling only LLMNR/NBT-NS left an mDNS-shaped gap, which was then closed and verified end-to-end
 - **SIEM deployment:** installed Splunk Enterprise on a dedicated Ubuntu VM, running as a non-root `splunk` user under `systemd`, and forwarded the DC's Security log with the Universal Forwarder — the installer was delivered over the isolated network, so DC01 never needed internet access
-- **Behavioral detection engineering:** since AES-only hardening makes the classic "RC4 = Kerberoasting" heuristic useless, built a Splunk search around request volume and service concentration per account instead; for LLMNR/NBT-NS, isolated the exact NTLM fallback reason code (`Reason_ID=10`) that distinguishes poisoning-triggered authentication from ordinary NTLM traffic, with zero false positives across two separate attack sessions
+- **Behavioral detection engineering:** since AES-only hardening makes the classic "RC4 = Kerberoasting" heuristic useless, built a Splunk search around request volume and service concentration per account instead; for LLMNR/NBT-NS, isolated the exact NTLM fallback reason text that distinguishes poisoning-triggered authentication from ordinary NTLM traffic, catching every fallback event logged across the project with no unrelated events mixed in
+- **Verifying vendor documentation against reality:** found that Microsoft's own NTLM auditing docs disagree with what this Windows Server 2025 build actually logs (`Reason_ID` values are swapped) — confirmed it on the raw event instead of assuming either source was right, and built the detection to filter on the reason text instead of the unreliable numeric ID
 
 ## 🛠️ Tools Used
 
 VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell · Impacket · Hashcat · Responder · Splunk Enterprise · Splunk Universal Forwarder
 
 ## ✅ Status
-🟡 **In progress / actively developed**
+🟢 **Complete**
 
 ✅ Domain Controller deployed and verified
 ✅ AD structure and Kerberoastable service account configured
@@ -82,13 +83,5 @@ VirtualBox · Windows Server 2025 · Kali Linux · Ubuntu Server · PowerShell �
 ✅ Splunk Enterprise installed and DC01 Security log forwarded to it
 ✅ Splunk detection searches built and verified for both attacks
 
-## 🔜 Roadmap
-
-- [x] Splunk01 VM (Ubuntu Server 24.04 LTS) added to the isolated network with a static IP (192.168.10.30)
-- [x] Install Splunk Enterprise on Splunk01
-- [x] Forward DC01 Windows event logs to Splunk with the Universal Forwarder
-- [x] Write Splunk detection searches for Kerberoasting (Event 4769) and LLMNR/NBT-NS poisoning
-
----
-
+##
 *This lab runs entirely within an isolated VirtualBox network with no internet-facing services. All credentials referenced are lab-only test values, generated solely for this project — including any intentional password reuse between accounts, which is part of the attack scenario, not a real-world credential leak.*
